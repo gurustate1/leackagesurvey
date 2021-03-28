@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "1081478419149",
+    "firebase_url": "https://groffey-93a76.firebaseio.com",
+    "project_id": "groffey-93a76",
+    "storage_bucket": "groffey-93a76.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1081478419149:android:2a0799b22c24be7f460f84",
+        "android_client_info": {
+          "package_name": "com.gloceryshop"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1081478419149-37g2cli8kubvsbvr8p94mj9s7hrd6ph3.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDw6gNeqmn9bz3c2SKfXAbeqtsOjU5jXek"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1081478419149-37g2cli8kubvsbvr8p94mj9s7hrd6ph3.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
