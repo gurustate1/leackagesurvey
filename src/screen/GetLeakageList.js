@@ -7,6 +7,7 @@ import {
   FlatList,
   Alert,
   BackHandler,
+  Image,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -109,7 +110,7 @@ export default class GetLeackagrList extends React.Component {
 
   async APISELECTCompany() {
     await fetch(
-      `https://leackagesurveyapp.azurewebsites.net/APIMaster/GetLeackageEntryListByUser?idUser=${
+      `https://leackagesurveyapp.com/APIMaster/GetLeackageEntryListByUser?idUser=${
         this.state.userid
       }
       &leakageNo=&pipeline=0&pressureOfPipeline=0&diameterOfPipeline=0&typeOfLeak=0&leakGrading=0&leakageStatus=0&idBranch=${
@@ -126,14 +127,11 @@ export default class GetLeackagrList extends React.Component {
       .then(response => response.json())
       .then(responseJson => {
         var data = responseJson;
-        console.log('list', data);
-
+        console.log(',kkk', this.state.userid);
         if (responseJson.result === []) {
-          console.log('False', responseJson.result);
           this.setState({animating: false});
         } else {
           this.setState({animating: false});
-          console.log('Success Getting Data', responseJson.result);
           this.setState({gelleackagelist: responseJson.result});
         }
       });
@@ -160,6 +158,14 @@ export default class GetLeackagrList extends React.Component {
     this.setState({selectbranch: this.state.ALLBRANCHE[0].label});
   };
 
+  editprofile = item => {
+    console.log('ITem Data', item);
+    //userid
+    this.props.navigation.navigate('EditSurvey', {
+      userid: item.IdLeakageSurvey,
+    });
+  };
+
   renderItem = ({item, index}) => {
     return (
       <View
@@ -181,8 +187,37 @@ export default class GetLeackagrList extends React.Component {
         <Text>Main Area: {item.mainArea}</Text>
         <Text>Type Of Leak: {item.typeOfLeak}</Text>
         <Text>Vegetation: {item.vegetation}</Text>
+        <TouchableOpacity
+          onPress={() => this.editprofile(item)}
+          style={{
+            height: 40,
+            marginTop: 40,
+            width: '116%',
+            backgroundColor: '#6A3FB2',
+            position: 'absolute',
+            bottom: 0,
+            alignSelf: 'center',
+            borderBottomRightRadius: 10,
+            borderBottomLeftRadius: 10,
+            justifyContent: 'center',
+          }}>
+          <Text
+            style={{
+              color: 'white',
+              alignSelf: 'center',
+              fontSize: 18,
+              fontWeight: 'bold',
+            }}>
+            Edit Leackage Entry
+          </Text>
+        </TouchableOpacity>
       </View>
     );
+  };
+
+  logout = async () => {
+    await AsyncStorage.setItem('login', 'false');
+    this.props.navigation.navigate('login');
   };
 
   render() {
@@ -199,7 +234,8 @@ export default class GetLeackagrList extends React.Component {
             height: 50,
             width: '100%',
             backgroundColor: '#6A3FB2',
-            justifyContent: 'center',
+            justifyContent: 'space-between',
+            flexDirection: 'row',
           }}>
           <Text
             style={{
@@ -212,6 +248,22 @@ export default class GetLeackagrList extends React.Component {
             {' '}
             Leakage List
           </Text>
+          <TouchableOpacity
+            onPress={() => this.logout()}
+            style={{justifyContent: 'center'}}>
+            <Image
+              source={{
+                uri:
+                  'https://1001freedownloads.s3.amazonaws.com/vector/thumb/98366/clarity-shutdown-icon.png',
+              }}
+              style={{
+                height: 25,
+                width: 25,
+                alignSelf: 'center',
+                marginEnd: 12,
+              }}
+            />
+          </TouchableOpacity>
         </View>
 
         <TouchableOpacity

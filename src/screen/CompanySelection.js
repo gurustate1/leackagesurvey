@@ -101,16 +101,13 @@ export default class CompanySelection extends React.Component {
   APISELECTCompany = () => {
     this.setState({animating: true});
 
-    fetch(
-      'https://leackagesurveyapp.azurewebsites.net/APIMaster/GetCompanyList',
-      {
-        method: 'GET',
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
-        },
+    fetch('https://leackagesurveyapp.com/APIMaster/GetCompanyList', {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
       },
-    )
+    })
       .then(response => response.json())
       .then(responseJson => {
         var data = responseJson.result;
@@ -155,7 +152,7 @@ export default class CompanySelection extends React.Component {
     this.setState({branchhide: true});
 
     fetch(
-      `https://leackagesurveyapp.azurewebsites.net/APIMaster/GetBranchListByUser?idCompany=${
+      `https://leackagesurveyapp.com/APIMaster/GetBranchListByUser?idCompany=${
         this.state.selectcompanyId
       }&idUser=${this.state.userid}`,
       {
@@ -314,11 +311,11 @@ export default class CompanySelection extends React.Component {
           </Text>
 
           <TouchableOpacity
+            onPress={() => this.APISELECTCompany()}
             style={{
               height: 40,
               width: '100%',
-            }}
-            onPress={() => console.log('Press')}>
+            }}>
             <RNPickerSelect
               style={pickerStyle}
               placeholder={{
@@ -338,9 +335,10 @@ export default class CompanySelection extends React.Component {
                   borderColor: '#6A3FB2',
                   borderRadius: 10,
                   padding: 6,
+                  // backgroundColor: 'grey',
                 }}>
                 <Text
-                  onPress={() => this.APISELECTCompany()}
+                  // onPress={() => this.APISELECTCompany()}
                   style={{
                     alignSelf: 'flex-start',
                     marginStart: 10,

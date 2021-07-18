@@ -5,10 +5,11 @@ import {createBottomTabNavigator} from 'react-navigation-tabs';
 import Splash from './src/screen/splash';
 import login from './src/screen/login';
 import Home from './src/screen/Home';
-import CompanySelection from './src/screen/CompanySelection'
+import CompanySelection from './src/screen/CompanySelection';
 import {Image} from 'react-native';
-import GetLeackagrList from "./src/screen/GetLeakageList";
+import GetLeackagrList from './src/screen/GetLeakageList';
 import AddLeackageSurvey from './src/screen/AddLeackageSurvey';
+import EditSurvey from './src/screen/EditSurvey';
 
 const AuthNavigator = createStackNavigator(
   {
@@ -54,9 +55,10 @@ const AppNavigator = createSwitchNavigator(
   {
     Splash: {screen: Splash},
     login: {screen: login},
-    CompanySelection:{screen:CompanySelection},
-    GetLeackagrList:{screen:GetLeackagrList},
-    AddLeackageSurvey:{screen:AddLeackageSurvey},
+    CompanySelection: {screen: CompanySelection},
+    GetLeackagrList: {screen: GetLeackagrList},
+    AddLeackageSurvey: {screen: AddLeackageSurvey},
+    EditSurvey: {screen: EditSurvey},
     MainNavigator: {screen: MainNavigator},
   },
   {

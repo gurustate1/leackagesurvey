@@ -43,7 +43,7 @@ export default class login extends React.Component {
         'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
       };
       fetch(
-        `https://leackagesurveyapp.azurewebsites.net/APIMaster/UserLogin?userName=${
+        `https://leackagesurveyapp.com/APIMaster/UserLogin?userName=${
           this.state.email
         }&password=${this.state.password}`,
         {
@@ -57,6 +57,7 @@ export default class login extends React.Component {
         .then(response => response.json())
         .then(responseJson => {
           if (responseJson.errorMessage === null) {
+            console.log('response>>>', responseJson);
             this.props.navigation.navigate('CompanySelection', {
               userid: responseJson.result.idUser,
             });

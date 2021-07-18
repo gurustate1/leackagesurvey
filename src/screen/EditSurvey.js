@@ -17,10 +17,9 @@ import {
 import RNPickerSelect from 'react-native-picker-select';
 import * as ImagePicker from 'react-native-image-picker';
 const GOGOLEKEY = 'AIzaSyCK0xHJ6Wh9vna1O4mqKQV4xvR_1k6XeDM';
-
+import ImgToBase64 from 'react-native-image-base64';
 import MapView, {PROVIDER_GOOGLE} from 'react-native-maps'; //Map
 import Geolocation from '@react-native-community/geolocation'; //Location Getting
-import ImgToBase64 from 'react-native-image-base64';
 const pickerStyle = {
   inputIOS: {
     color: 'transparent',
@@ -217,19 +216,11 @@ var mapStyle = [
   },
 ];
 
-export default class AddLeackageSurvey extends React.Component {
+export default class EditSurvey extends React.Component {
   constructor(props) {
     super(props);
     this.handleBackButtonClick = this.handleBackButtonClick.bind(this);
     this.state = {
-      selection: [
-        {
-          label: 'UnderGround',
-        },
-        {
-          label: 'Above Ground',
-        },
-      ],
       pipelinevalue: '',
       pipelineid: 0,
       pipeline: [
@@ -241,6 +232,13 @@ export default class AddLeackageSurvey extends React.Component {
           value: 2,
           label: 'SS',
         },
+      ],
+      selection: [
+        {
+          index: 1,
+          label: 'UnderGround',
+        },
+        {index: 2, label: 'Above Ground'},
       ],
       pressureOfPipelineid: 0,
       pressureOfPipelinevalue: '',
@@ -489,9 +487,12 @@ export default class AddLeackageSurvey extends React.Component {
       selectedcompany: '',
       selectedbranch: '',
       imagebase64: '',
-      latitude: 22.2875723,
-      longitude: 22.2875723,
-      ground: 'UnderGround',
+      longitude: 72.5713621,
+      latitude: 72.5713621,
+      selectedground: 1,
+      createdon: '',
+      IdLeakageSurvey: 0,
+      idUser: 0,
     };
   }
 
@@ -503,24 +504,64 @@ export default class AddLeackageSurvey extends React.Component {
       selectedbranch: selectedBranch,
     });
 
-    Geolocation.getCurrentPosition(
-      position => {
-        console.log('Latitude>>', position.coords.latitude);
-        console.log('Longitude>>', position.coords.longitude);
-
-        this.setState({
-          latitude: position.coords.latitude, //add latitude in state from position location
-          longitude: position.coords.longitude, //add longitute in state from position location
-        });
-      },
-      error => console.log(error),
-      {
-        enableHighAccuracy: false,
-        timeout: 10000,
-        maximumAge: 3600000,
-      },
-    );
+    this.editcallapi();
   }
+
+  editcallapi = () => {
+    // console.log('Userid', this.state.userid);
+    //userid
+    fetch(
+      `https://leackagesurveyapp.com/APIMaster/GetLeackageEntryById?idLeakageSurvey=${
+        this.state.userid
+      }`,
+      {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+      },
+    )
+      .then(response => response.json())
+      .then(responseJson => {
+        // console.log('Calling Add Lickage', responseJson.result);
+        if (responseJson.errorMessage === '') {
+          this.setState({
+            pipelinevalue: responseJson.result.pipeline,
+            pressureOfPipelinevalue: responseJson.result.pressureOfPipeline,
+            diameterOfPipelinevalue: responseJson.result.diameterOfPipeline,
+            ifundergroundvalue: responseJson.result.ifUndergroundGround,
+            ifAboveGroundvalue: responseJson.result.ifAboveGround,
+            vegetationvalue: responseJson.result.vegetation,
+            locationOfPipevalue: responseJson.result.locationOfPipe,
+            CoverofPipelinevalue: responseJson.result.coverOfPipeline,
+            leakgrading: responseJson.result.leakGrading,
+            MainArea: responseJson.result.mainArea,
+            image: responseJson.result.photo,
+            ProbableCauseofLeak: responseJson.result.causeOfLeak,
+            SubArea: responseJson.result.subAreaLocation,
+            SourceofLeakge: responseJson.result.sourceOfLeakge,
+            WhenLeack: responseJson.result.dpIRReadingWhenLeakDetectedFirst,
+            DPIRREADINGUSINGBARHOLEPROBE:
+              responseJson.result.dpIRReadingUsingBarHoleProbe,
+            RMLDREADINGWHENLEAKDETECTEDFIRST:
+              responseJson.result.rmldReadingWhenLeakDetectedFirst,
+            latitude: parseFloat(responseJson.result.latitude),
+            longitude: parseFloat(responseJson.result.longitude),
+            IdLeakageSurvey: responseJson.result.IdLeakageSurvey,
+            idUser: responseJson.result.idUser,
+          });
+          if (responseJson.result.ifUndergroundGround >= 0) {
+            this.setState({selectedground: 1});
+          } else if (responseJson.result.ifAboveGround >= 0) {
+            this.setState({selectedground: 2});
+          } else {
+            this.setState({selectedground: 0});
+          }
+        } else {
+        }
+      });
+  };
 
   componentWillMount() {
     BackHandler.addEventListener(
@@ -547,7 +588,7 @@ export default class AddLeackageSurvey extends React.Component {
 
   login = async () => {
     Keyboard.dismiss();
-
+    console.log(' this.state.ifAboveGroundvalueid', this.state.imagebase64);
     if (this.state.pipelinevalue === '') {
       alert('Need to Select Pipeline');
     } else if (this.state.pressureOfPipelinevalue === '') {
@@ -570,7 +611,7 @@ export default class AddLeackageSurvey extends React.Component {
       alert('Need to Add Source of Leakage');
     } else if (this.state.ProbableCauseofLeak === '') {
       alert('Need to Add Probable cause of leak');
-    } else if (this.state.DPIRREADINGWHENLEAKDETECTEDFIRST === '') {
+    } else if (this.state.WhenLeack === '') {
       alert('Please fill all blanks!');
     } else if (this.state.DPIRREADINGUSINGBARHOLEPROBE === '') {
       alert('Please fill all blanks!');
@@ -579,82 +620,137 @@ export default class AddLeackageSurvey extends React.Component {
     } else if (this.state.image === '') {
       alert('Please select image!');
     } else {
-      var body = JSON.stringify({
-        IdLeakageSurvey: 0, //Static
-        causeOfLeak: '2',
-        coverOfPipeline: this.state.CoverofPipelinevalueid,
-        createdBy: null,
-        createdOn: new Date(),
-        diameterOfPipeline: this.state.diameterOfPipelinevalueid,
-        dpIRReadingUsingBarHoleProbe: this.state.DPIRREADINGUSINGBARHOLEPROBE,
-        dpIRReadingWhenLeakDetectedFirst: this.state
-          .DPIRREADINGWHENLEAKDETECTEDFIRST,
-        idBranch: this.state.selectedbranch,
-        photoExtension: '.jpg',
-        idCompany: this.state.selectedcompany,
-        idUser: this.state.userid, //UserID
-        ifAboveGround: this.state.ifAboveGroundvalueid,
-        ifUndergroundGround: this.state.ifundergroundvalueid,
-        latitude: this.state.latitude,
-        leakGrading: this.state.leakgradingid,
-        leakageStatus: 0, //Static
-        locationOfPipe: this.state.locationOfPipevalueid,
-        longitude: this.state.longitude,
-        photo: this.state.imagebase64,
-        mainArea: this.state.MainArea,
-        pipeline: this.state.pipelineid,
-        pressureOfPipeline: this.state.pressureOfPipelineid,
-        rmldReadingWhenLeakDetectedFirst: this.state
-          .RMLDREADINGWHENLEAKDETECTEDFIRST,
-        sourceOfLeakge: this.state.SourceofLeakge,
-        subAreaLocation: this.state.SubArea,
-        typeOfLeak: this.state.typesofleackvalueid,
-        vegetation: this.state.vegetationvalueid,
-      });
-      console.log('Body Add>>', body);
-
-      fetch(
-        'https://leackagesurveyapp.com/APIMaster/AddOrUpdateLeackageEntry',
-        {
-          method: 'POST',
-          headers: {
-            Accept: 'application/json',
-            'Content-Type': 'application/json',
-          },
-          body: body,
-        },
-      )
-        .then(response => response.json())
-        .then(responseJson => {
-          console.log('Calling Add Lickage', responseJson);
-          if (responseJson.errorMessage === '') {
-            Alert.alert('', 'Your Survey Added!', [
-              {text: 'OK', onPress: () => this.callPreshh()},
-            ]);
-          } else {
-          }
-        })
-        .catch(error => {
-          console.error(error);
+      let body = {};
+      if (this.state.imagebase64 === '') {
+        console.log('Going in Image defined no', this.state.image);
+        body = JSON.stringify({
+          IdLeakageSurvey: this.state.IdLeakageSurvey, //Static
+          causeOfLeak: '2',
+          coverOfPipeline: this.state.CoverofPipelinevalueid,
+          createdBy: null,
+          createdOn: new Date(),
+          diameterOfPipeline: this.state.diameterOfPipelinevalueid,
+          dpIRReadingUsingBarHoleProbe: this.state.DPIRREADINGUSINGBARHOLEPROBE,
+          dpIRReadingWhenLeakDetectedFirst: this.state.WhenLeack,
+          idBranch: parseInt(this.state.selectedbranch),
+          idCompany: this.state.selectedcompany,
+          idUser: this.state.idUser, //UserID
+          ifAboveGround: this.state.ifAboveGroundvalueid,
+          ifUndergroundGround: this.state.ifundergroundvalueid,
+          latitude: this.state.latitude,
+          leakGrading: this.state.leakgradingid,
+          leakageStatus: 0, //Static
+          locationOfPipe: this.state.locationOfPipevalueid,
+          longitude: this.state.longitude,
+          photo: this.state.image,
+          photoExtension: '.jpg',
+          mainArea: this.state.MainArea,
+          pipeline: this.state.pipelineid,
+          pressureOfPipeline: this.state.pressureOfPipelineid,
+          rmldReadingWhenLeakDetectedFirst: this.state
+            .RMLDREADINGWHENLEAKDETECTEDFIRST,
+          sourceOfLeakge: this.state.SourceofLeakge,
+          subAreaLocation: this.state.SubArea,
+          typeOfLeak: this.state.typesofleackvalueid,
+          vegetation: this.state.vegetationvalueid,
         });
+        console.log('Body Edit 1>>', body);
+        fetch(
+          'https://leackagesurveyapp.com/APIMaster/AddOrUpdateLeackageEntry',
+          {
+            method: 'POST',
+            headers: {
+              Accept: 'application/json',
+              'Content-Type': 'application/json',
+            },
+            body: body,
+          },
+        )
+          .then(response => response.json())
+          .then(responseJson => {
+            console.log('Calling Add Lickage From Response', responseJson);
+            if (responseJson.errorMessage === '') {
+              Alert.alert('', 'Your Survey Added!', [
+                {text: 'OK', onPress: () => this.callPreshh()},
+              ]);
+            } else {
+            }
+          });
+      } else {
+        console.log('Going in Image defined Tes');
+
+        body = JSON.stringify({
+          IdLeakageSurvey: this.state.IdLeakageSurvey, //Static
+          causeOfLeak: '2',
+          coverOfPipeline: this.state.CoverofPipelinevalueid,
+          createdBy: null,
+          createdOn: new Date(),
+          diameterOfPipeline: this.state.diameterOfPipelinevalueid,
+          dpIRReadingUsingBarHoleProbe: this.state.DPIRREADINGUSINGBARHOLEPROBE,
+          dpIRReadingWhenLeakDetectedFirst: this.state.WhenLeack,
+          idBranch: parseInt(this.state.selectedbranch),
+          idCompany: this.state.selectedcompany,
+          idUser: this.state.idUser, //UserID
+          ifAboveGround: this.state.ifAboveGroundvalueid,
+          ifUndergroundGround: this.state.ifundergroundvalueid,
+          latitude: this.state.latitude,
+          leakGrading: this.state.leakgradingid,
+          leakageStatus: 0, //Static
+          locationOfPipe: this.state.locationOfPipevalueid,
+          longitude: this.state.longitude,
+          photo: this.state.imagebase64,
+          photoExtension: '.jpg',
+          mainArea: this.state.MainArea,
+          pipeline: this.state.pipelineid,
+          pressureOfPipeline: this.state.pressureOfPipelineid,
+          rmldReadingWhenLeakDetectedFirst: this.state
+            .RMLDREADINGWHENLEAKDETECTEDFIRST,
+          sourceOfLeakge: this.state.SourceofLeakge,
+          subAreaLocation: this.state.SubArea,
+          typeOfLeak: this.state.typesofleackvalueid,
+          vegetation: this.state.vegetationvalueid,
+        });
+        // console.log('Body Edit 1>>', body);
+        fetch(
+          'https://leackagesurveyapp.com/APIMaster/AddOrUpdateLeackageEntry',
+          {
+            method: 'POST',
+            headers: {
+              Accept: 'application/json',
+              'Content-Type': 'application/json',
+            },
+            body: body,
+          },
+        )
+          .then(response => response.json())
+          .then(responseJson => {
+            // console.log('Calling Add Lickage From Response', responseJson);
+            if (responseJson.errorMessage === '') {
+              Alert.alert('', 'Your Survey Added!', [
+                {text: 'OK', onPress: () => this.callPreshh()},
+              ]);
+            } else {
+            }
+          });
+      }
     }
   };
 
   pipelinechange = (value, index) => {
-    console.log('value', value);
-    if (value === undefined) {
+    // console.log('value', value);
+    if (value === undefined || value === null) {
     } else {
       this.setState({
         pipelinevalue: this.state.pipeline[index - 1].label,
         pipelineid: value,
       });
-      console.log('value>', this.state.pipeline[index - 1].label);
+      // console.log('value>', this.state.pipeline[index - 1].label);
     }
   };
 
   changepresurepipeline = (value, index) => {
-    console.log('value', value);
-    if (value === undefined) {
+    // console.log('value', value);
+    if (value === undefined || value === null) {
     } else {
       this.setState({
         pressureOfPipelinevalue: this.state.pressureOfPipeline[index - 1].label,
@@ -665,8 +761,8 @@ export default class AddLeackageSurvey extends React.Component {
   };
 
   changediameterpipeline = (value, index) => {
-    console.log('value', value);
-    if (value === undefined) {
+    // console.log('value', value);
+    if (value === undefined || value === null) {
     } else {
       this.setState({
         diameterOfPipelinevalue: this.state.diameterOfPipeline[index - 1].label,
@@ -677,23 +773,22 @@ export default class AddLeackageSurvey extends React.Component {
   };
 
   changediameterpipeline = (value, index) => {
-    console.log('value', value);
-    if (value === undefined) {
+    // console.log('value', value);
+    if (value === undefined || value === null) {
     } else {
       this.setState({
         diameterOfPipelinevalue: this.state.diameterOfPipeline[index - 1].label,
         diameterOfPipelinevalueid: value,
       });
-      // console.log('value>',this.state.pipeline[index].label);
     }
   };
 
   changeifunderground = (value, index) => {
-    console.log('value', value);
-    if (value === undefined) {
+    // console.log('value', value);
+    if (value === undefined || value === null) {
     } else {
       this.setState({
-        ifundergroundvalue: this.state.ifUndergroundGround[index].label,
+        ifundergroundvalue: this.state.ifUndergroundGround[index - 1].label,
         ifundergroundvalueid: value,
       });
       // console.log('value>',this.state.pipeline[index].label);
@@ -701,11 +796,11 @@ export default class AddLeackageSurvey extends React.Component {
   };
 
   changeifaboveground = (value, index) => {
-    console.log('value', value);
-    if (value === undefined) {
+    // console.log('value', value);
+    if (value === undefined || value === null) {
     } else {
       this.setState({
-        ifAboveGroundvalue: this.state.ifAboveGround[index].label,
+        ifAboveGroundvalue: this.state.ifAboveGround[index - 1].label,
         ifAboveGroundvalueid: value,
       });
       // console.log('value>',this.state.pipeline[index].label);
@@ -713,8 +808,8 @@ export default class AddLeackageSurvey extends React.Component {
   };
 
   changevegetation = (value, index) => {
-    console.log('value', value);
-    if (value === undefined) {
+    // console.log('value', value);
+    if (value === undefined || value === null) {
     } else {
       this.setState({
         vegetationvalue: this.state.Vegetation[index - 1].label,
@@ -725,8 +820,8 @@ export default class AddLeackageSurvey extends React.Component {
   };
 
   chnagelocationpipe = (value, index) => {
-    console.log('value', value);
-    if (value === undefined) {
+    // console.log('value', value);
+    if (value === undefined || value === null) {
     } else {
       this.setState({
         locationOfPipevalue: this.state.LocationofPipe[index - 1].label,
@@ -737,8 +832,8 @@ export default class AddLeackageSurvey extends React.Component {
   };
 
   changecocerpipeline = (value, index) => {
-    console.log('value', value);
-    if (value === undefined) {
+    // console.log('value', value);
+    if (value === undefined || value === null) {
     } else {
       this.setState({
         CoverofPipelinevalue: this.state.CoverofPipeline[index - 1].label,
@@ -749,8 +844,8 @@ export default class AddLeackageSurvey extends React.Component {
   };
 
   changeleakgranding = (value, index) => {
-    console.log('value', value);
-    if (value === undefined) {
+    // console.log('value', value);
+    if (value === undefined || value === null) {
     } else {
       this.setState({
         leakgrading: this.state.LeakGrading[index - 1].label,
@@ -773,11 +868,11 @@ export default class AddLeackageSurvey extends React.Component {
     };
     ImagePicker.launchImageLibrary(options, response => {
       if (response.didCancel) {
-        console.log('User cancelled photo picker');
+        // console.log('User cancelled photo picker');
       } else if (response.error) {
-        console.log('ImagePicker Error: ', response.error);
+        // console.log('ImagePicker Error: ', response.error);
       } else if (response.customButton) {
-        console.log('User tapped custom button: ', response.customButton);
+        // console.log('User tapped custom button: ', response.customButton);
       } else {
         var temp;
         // You can display the image using either:
@@ -815,52 +910,6 @@ export default class AddLeackageSurvey extends React.Component {
     const animating = this.state.animating;
     return (
       <View style={{flex: 1}}>
-        <View style={{height: 140, width: '100%'}}>
-          <GooglePlacesAutocomplete
-            placeholder={'Search'}
-            style={{
-              height: '100%',
-              borderRadius: 10,
-              width: '100%',
-            }}
-            minLength={2} // minimum length of text to search
-            autoFocus={false}
-            returnKeyType={'Search'} // Can be left out for default return key https://facebook.github.io/react-native/docs/textinput.html#returnkeytype
-            keyboardAppearance={'light'} // Can be left out for default keyboardAppearance https://facebook.github.io/react-native/docs/textinput.html#keyboardappearance
-            listViewDisplayed="true" // true/false/undefined
-            fetchDetails={true}
-            enablePoweredByContainer={true}
-            keyboardShouldPersistTaps={true}
-            renderDescription={row => row.description} // custom description render
-            onPress={(data, details = null) => {
-              console.log(
-                'Data:' +
-                  JSON.stringify(data.geometry) +
-                  'Data:' +
-                  JSON.stringify(details.geometry.location),
-              );
-              this.setState({
-                latitude: details.geometry.location.lat,
-                longitude: details.geometry.location.lng,
-              });
-            }}
-            query={{
-              // available options: https://developers.google.com/places/web-service/autocomplete
-              key: GOGOLEKEY,
-              language: 'en', // language of the results
-              //types: 'geocode','regions' // default: 'geocode','regions'
-            }}
-            currentLocationLabel="Current location"
-            nearbyPlacesAPI="GooglePlacesSearch" // Which API to use: GoogleReverseGeocoding or GooglePlacesSearch
-            filterReverseGeocodingByTypes={[
-              'locality',
-              'administrative_area_level_3',
-            ]} // filter the reverse geocoding results by types - ['locality', 'administrative_area_level_3'] if you want to display only cities
-            currentLocation={true} // Will add a 'Current location' button at the top of the predefined places list
-            // debounce={200} // debounce the requests in ms. Set to 0 to remove debounce. By default 0ms.
-          />
-        </View>
-
         <View style={styles.ViewImg}>
           <MapView
             provider={PROVIDER_GOOGLE} // remove if not using Google Maps
@@ -885,48 +934,7 @@ export default class AddLeackageSurvey extends React.Component {
             />
           </MapView>
         </View>
-
         <ScrollView>
-          {/* <GooglePlacesAutocomplete
-            placeholder={'Search'}
-            style={{
-              height: 100,
-              borderRadius: 10,
-              width: 100,
-            }}
-            minLength={2} // minimum length of text to search
-            autoFocus={false}
-            returnKeyType={'Search'} // Can be left out for default return key https://facebook.github.io/react-native/docs/textinput.html#returnkeytype
-            keyboardAppearance={'light'} // Can be left out for default keyboardAppearance https://facebook.github.io/react-native/docs/textinput.html#keyboardappearance
-            listViewDisplayed="true" // true/false/undefined
-            fetchDetails={true}
-            enablePoweredByContainer={true}
-            keyboardShouldPersistTaps={true}
-            renderDescription={row => row.description} // custom description render
-            onPress={(data, details = null) => {
-              console.log(
-                'Data:' +
-                  JSON.stringify(data) +
-                  'Data:' +
-                  JSON.stringify(details),
-              );
-            }}
-            query={{
-              // available options: https://developers.google.com/places/web-service/autocomplete
-              key: GOGOLEKEY,
-              language: 'en', // language of the results
-              //types: 'geocode','regions' // default: 'geocode','regions'
-            }}
-            currentLocationLabel="Current location"
-            nearbyPlacesAPI="GooglePlacesSearch" // Which API to use: GoogleReverseGeocoding or GooglePlacesSearch
-            filterReverseGeocodingByTypes={[
-              'locality',
-              'administrative_area_level_3',
-            ]} // filter the reverse geocoding results by types - ['locality', 'administrative_area_level_3'] if you want to display only cities
-            currentLocation={true} // Will add a 'Current location' button at the top of the predefined places list
-            // debounce={200} // debounce the requests in ms. Set to 0 to remove debounce. By default 0ms.
-          /> */}
-
           <ImageBackground
             source={require('../assets/backs.jpg')}
             style={{
@@ -952,7 +960,7 @@ export default class AddLeackageSurvey extends React.Component {
                   color: '#6A3FB2',
                   marginBottom: 15,
                 }}>
-                Add Leackage Survey
+                Edit Leackage Survey
               </Text>
 
               {/* Date Picker  */}
@@ -965,10 +973,11 @@ export default class AddLeackageSurvey extends React.Component {
                   onValueChange={(value, index) =>
                     this.pipelinechange(value, index)
                   }
+                  value={this.state.pipelinevalue}
                   // onOpen={() =>    this.APISELECTCompany()}
                   items={this.state.pipeline}>
                   <TouchableOpacity
-                    onPress={() => this.APISELECTCompany()}
+                    // onPress={() => this.APISELECTCompany()}
                     style={{
                       marginTop: 0,
                       justifyContent: 'center',
@@ -996,18 +1005,20 @@ export default class AddLeackageSurvey extends React.Component {
                   // placeholder={{
                   //   label:"Select Company",
                   // }}
+                  value={this.state.pressureOfPipelinevalue}
                   onValueChange={(value, index) =>
                     this.changepresurepipeline(value, index)
                   }
                   // onOpen={() =>    this.APISELECTCompany()}
                   items={this.state.pressureOfPipeline}>
                   <TouchableOpacity
-                    onPress={() => this.APISELECTCompany()}
+                    // onPress={() => this.APISELECTCompany()}
                     style={{
                       marginTop: 0,
                       justifyContent: 'center',
                       borderWidth: 1,
                       borderColor: '#6A3FB2',
+
                       borderRadius: 10,
                       padding: 6,
                     }}>
@@ -1033,10 +1044,11 @@ export default class AddLeackageSurvey extends React.Component {
                   onValueChange={(value, index) =>
                     this.changediameterpipeline(value, index)
                   }
+                  value={this.state.diameterOfPipelinevalue}
                   // onOpen={() =>    this.APISELECTCompany()}
                   items={this.state.diameterOfPipeline}>
                   <TouchableOpacity
-                    onPress={() => this.APISELECTCompany()}
+                    // onPress={() => this.APISELECTCompany()}
                     style={{
                       marginTop: 0,
                       justifyContent: 'center',
@@ -1059,85 +1071,92 @@ export default class AddLeackageSurvey extends React.Component {
                 </RNPickerSelect>
               </View>
 
-              <RadioButtonRN
-                data={this.state.selection}
-                style={{marginBottom: 15}}
-                initial={1}
-                selectedBtn={e => this.setState({ground: e.label})}
-              />
-
               <View style={{marginBottom: 15}}>
-                {this.state.ground === 'UnderGround' ? (
-                  <RNPickerSelect
-                    style={pickerStyle}
-                    placeholder={{
-                      label: 'Select If Inderground',
-                    }}
-                    onValueChange={(value, index) =>
-                      this.changeifunderground(value, index)
-                    }
-                    // onOpen={() =>    this.APISELECTCompany()}
-                    items={this.state.ifUndergroundGround}>
-                    <TouchableOpacity
-                      onPress={() => this.APISELECTCompany()}
-                      style={{
-                        marginTop: 0,
-                        justifyContent: 'center',
-                        borderWidth: 1,
-                        borderColor: '#6A3FB2',
-                        borderRadius: 10,
-                        padding: 6,
-                      }}>
-                      <Text
+                <RadioButtonRN
+                  data={this.state.selection}
+                  style={{marginBottom: 15}}
+                  initial={1}
+                  selectedBtn={e => this.setState({selectedground: e.index})}
+                />
+
+                <View>
+                  {this.state.selectedground === 1 ? (
+                    <View style={{marginBottom: 0}}>
+                      <RNPickerSelect
+                        style={pickerStyle}
+                        // placeholder={{
+                        //   label:"Select Company",
+                        // }}
+                        onValueChange={(value, index) =>
+                          this.changeifunderground(value, index)
+                        }
+                        value={this.state.ifundergroundvalue}
+                        // onOpen={() =>    this.APISELECTCompany()}
+                        items={this.state.ifUndergroundGround}>
+                        <TouchableOpacity
+                          // onPress={() => this.APISELECTCompany()}
+                          style={{
+                            marginTop: 0,
+                            justifyContent: 'center',
+                            borderWidth: 1,
+                            borderColor: '#6A3FB2',
+                            borderRadius: 10,
+                            padding: 6,
+                          }}>
+                          <Text
+                            style={{
+                              alignSelf: 'flex-start',
+                              marginStart: 15,
+                              fontSize: 18,
+                            }}>
+                            {this.state.ifundergroundvalue === ''
+                              ? 'Select If Underground'
+                              : this.state.ifundergroundvalue}
+                          </Text>
+                        </TouchableOpacity>
+                      </RNPickerSelect>
+                    </View>
+                  ) : (
+                    <RNPickerSelect
+                      style={pickerStyle}
+                      value={this.state.ifAboveGroundvalue}
+                      // placeholder={{
+                      //   label:"Select Company",
+                      // }}
+                      onValueChange={(value, index) =>
+                        this.changeifaboveground(value, index)
+                      }
+                      items={this.state.ifAboveGround}>
+                      <TouchableOpacity
+                        // onPress={() => this.APISELECTCompany()}
                         style={{
-                          alignSelf: 'flex-start',
-                          marginStart: 15,
-                          fontSize: 18,
+                          marginTop: 0,
+                          justifyContent: 'center',
+                          borderWidth: 1,
+                          borderColor: '#6A3FB2',
+                          borderRadius: 10,
+                          padding: 6,
                         }}>
-                        {this.state.ifundergroundvalue === ''
-                          ? 'Select If Underground'
-                          : this.state.ifundergroundvalue}
-                      </Text>
-                    </TouchableOpacity>
-                  </RNPickerSelect>
-                ) : (
-                  <RNPickerSelect
-                    style={pickerStyle}
-                    placeholder={{
-                      label: 'Select If Above Ground',
-                    }}
-                    onValueChange={(value, index) =>
-                      this.changeifaboveground(value, index)
-                    }
-                    items={this.state.ifAboveGround}>
-                    <TouchableOpacity
-                      onPress={() => this.APISELECTCompany()}
-                      style={{
-                        marginTop: 0,
-                        justifyContent: 'center',
-                        borderWidth: 1,
-                        borderColor: '#6A3FB2',
-                        borderRadius: 10,
-                        padding: 6,
-                      }}>
-                      <Text
-                        style={{
-                          alignSelf: 'flex-start',
-                          marginStart: 15,
-                          fontSize: 18,
-                        }}>
-                        {this.state.ifAboveGroundvalue === ''
-                          ? 'Select If Above Ground'
-                          : this.state.ifAboveGroundvalue}
-                      </Text>
-                    </TouchableOpacity>
-                  </RNPickerSelect>
-                )}
+                        <Text
+                          style={{
+                            alignSelf: 'flex-start',
+                            marginStart: 15,
+                            fontSize: 18,
+                          }}>
+                          {this.state.ifAboveGroundvalue === ''
+                            ? 'Select If Above Ground'
+                            : this.state.ifAboveGroundvalue}
+                        </Text>
+                      </TouchableOpacity>
+                    </RNPickerSelect>
+                  )}
+                </View>
               </View>
 
               <View style={{marginBottom: 15}}>
                 <RNPickerSelect
                   style={pickerStyle}
+                  value={this.state.vegetationvalue}
                   // placeholder={{
                   //   label:"Select Company",
                   // }}
@@ -1147,7 +1166,7 @@ export default class AddLeackageSurvey extends React.Component {
                   // onOpen={() =>    this.APISELECTCompany()}
                   items={this.state.Vegetation}>
                   <TouchableOpacity
-                    onPress={() => this.APISELECTCompany()}
+                    // onPress={() => this.APISELECTCompany()}
                     style={{
                       marginTop: 0,
                       justifyContent: 'center',
@@ -1172,6 +1191,7 @@ export default class AddLeackageSurvey extends React.Component {
 
               <View style={{marginBottom: 15}}>
                 <RNPickerSelect
+                  value={this.state.locationOfPipevalue}
                   style={pickerStyle}
                   // placeholder={{
                   //   label:"Select Company",
@@ -1182,7 +1202,7 @@ export default class AddLeackageSurvey extends React.Component {
                   // onOpen={() =>    this.APISELECTCompany()}
                   items={this.state.LocationofPipe}>
                   <TouchableOpacity
-                    onPress={() => this.APISELECTCompany()}
+                    // onPress={() => this.APISELECTCompany()}
                     style={{
                       marginTop: 0,
                       justifyContent: 'center',
@@ -1208,6 +1228,7 @@ export default class AddLeackageSurvey extends React.Component {
               <View style={{marginBottom: 15}}>
                 <RNPickerSelect
                   style={pickerStyle}
+                  value={this.state.CoverofPipelinevalue}
                   // placeholder={{
                   //   label:"Select Company",
                   // }}
@@ -1217,7 +1238,7 @@ export default class AddLeackageSurvey extends React.Component {
                   // onOpen={() =>    this.APISELECTCompany()}
                   items={this.state.CoverofPipeline}>
                   <TouchableOpacity
-                    onPress={() => this.APISELECTCompany()}
+                    // onPress={() => this.APISELECTCompany()}
                     style={{
                       marginTop: 0,
                       justifyContent: 'center',
@@ -1242,16 +1263,16 @@ export default class AddLeackageSurvey extends React.Component {
 
               <RNPickerSelect
                 style={pickerStyle}
-                // placeholder={{
-                //   label: 'Select Company',
-                // }}
+                placeholder={{
+                  label: 'Select Company',
+                }}
+                value={this.state.leakgrading}
                 onValueChange={(value, index) =>
                   this.changeleakgranding(value, index)
                 }
                 // onOpen={() =>    this.APISELECTCompany()}
                 items={this.state.LeakGrading}>
                 <TouchableOpacity
-                  onPress={() => this.APISELECTCompany()}
                   style={{
                     marginTop: 0,
                     justifyContent: 'center',
@@ -1330,7 +1351,7 @@ export default class AddLeackageSurvey extends React.Component {
                 onChangeText={text =>
                   this.setState({DPIRREADINGWHENLEAKDETECTEDFIRST: text})
                 }
-                value={this.state.DPIRREADINGWHENLEAKDETECTEDFIRST}
+                value={this.state.RMLDREADINGWHENLEAKDETECTEDFIRST.toString()}
                 placeholderTextColor="#6A3FB2"
                 placeholder="Select READING WHEN LEAK DETECTED FIRST"
                 style={styles.textinputstyle}
@@ -1341,7 +1362,7 @@ export default class AddLeackageSurvey extends React.Component {
                 onChangeText={text =>
                   this.setState({DPIRREADINGUSINGBARHOLEPROBE: text})
                 }
-                value={this.state.DPIRREADINGUSINGBARHOLEPROBE}
+                value={this.state.DPIRREADINGUSINGBARHOLEPROBE.toString()}
                 placeholderTextColor="#6A3FB2"
                 placeholder="Select READING USING BAR HOLE PROBE"
                 style={styles.textinputstyle}
@@ -1352,7 +1373,7 @@ export default class AddLeackageSurvey extends React.Component {
                 onChangeText={text =>
                   this.setState({RMLDREADINGWHENLEAKDETECTEDFIRST: text})
                 }
-                value={this.state.RMLDREADINGWHENLEAKDETECTEDFIRST}
+                value={this.state.RMLDREADINGWHENLEAKDETECTEDFIRST.toString()}
                 placeholderTextColor="#6A3FB2"
                 placeholder="Select READING WHEN LEAK DETECTED FIRST"
                 style={styles.textinputstyle}
@@ -1387,7 +1408,7 @@ export default class AddLeackageSurvey extends React.Component {
                         color: 'white',
                         fontSize: 18,
                       }}>
-                      Add
+                      Update
                     </Text>
                   </TouchableOpacity>
                   <TouchableOpacity
